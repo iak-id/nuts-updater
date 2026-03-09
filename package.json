@@ -6,20 +6,19 @@
   "homepage": "https://github.com/GitbookIO/nuts",
   "license": "Apache-2.0",
   "dependencies": {
-    "analytics-node": "1.2.2",
+    "analytics-node": "^3.0.0",
     "basic-auth": "1.0.3",
-    "body-parser": "1.12.3",
+    "body-parser": "^1.20.4",
     "destroy": "1.0.3",
     "express": "^4.13.3",
     "express-useragent": "0.1.9",
     "feed": "^0.3.0",
-    "github-webhook-handler": "0.5.0",
-    "lodash": "3.7.0",
-    "lru-diskcache": "1.1.1",
-    "octocat": "0.10.2",
+    "github-webhook-handler": "^1.0.0",
+    "got": "^11.8.6",
+    "lodash": "^4.17.21",
+    "octocat": "^0.12.1",
     "q": "1.2.0",
-    "request": "2.60.0",
-    "semver": "5.0.1",
+    "semver": "^5.7.2",
     "stream-res": "1.0.1",
     "strip-bom": "2.0.0",
     "understudy": "4.1.0",
@@ -27,7 +26,7 @@
     "uuid": "2.0.1"
   },
   "devDependencies": {
-    "mocha": "1.18.2",
+    "mocha": "^11.7.5",
     "should": "7.0.4"
   },
   "bugs": {
@@ -42,6 +41,13 @@
   "repository": {
     "type": "git",
     "url": "https://github.com/GitbookIO/nuts.git"
+  },
+  "engines": {
+    "node": ">=22.0.0"
+  },
+  "overrides": {
+    "diff": "^8.0.3",
+    "serialize-javascript": ">=7.0.3"
   },
   "scripts": {
     "start": "node bin/web.js",

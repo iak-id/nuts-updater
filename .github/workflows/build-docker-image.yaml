@@ -1,0 +1,83 @@
+name: Build and push Docker image
+
+on:
+  push:
+    branches:
+      - "master"
+  workflow_dispatch:
+
+env:
+  REGISTRY: ghcr.io
+  IMAGE_NAME: ${{ github.repository }}
+
+concurrency:
+  group: nuts-updater-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  build-and-push-image:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      packages: write
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set commit meta
+        id: commit
+        run: |
+          echo "message=$(git log -1 --pretty=%B | tr '\n' ' ')" >> $GITHUB_OUTPUT
+          echo "hash=$(git log -1 --pretty=%h)" >> $GITHUB_OUTPUT
+
+      - name: Find release number
+        id: getrelease
+        uses: AsasInnab/regex-action@v1
+        with:
+          regex_pattern: '(\d{2}.\d{2}.\d+)'
+          regex_flags: 'gim'
+          search_string: ${{ steps.commit.outputs.message }}
+
+      - name: Set release
+        run: echo "Release code is ${{ steps.getrelease.outputs.first_match != '' && steps.getrelease.outputs.first_match || steps.commit.outputs.hash }}"
+
+      - name: Log in to the Container registry
+        uses: docker/login-action@v3
+        with:
+          registry: ${{ env.REGISTRY }}
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Extract metadata (tags, labels) for Docker
+        id: meta
+        uses: docker/metadata-action@v5
+        with:
+          images: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}
+          tags: |
+            type=raw,value=${{ steps.getrelease.outputs.first_match != '' && steps.getrelease.outputs.first_match || steps.commit.outputs.hash }}
+            type=raw,value=latest,enable=${{ github.ref_name == 'master' }}
+            type=ref,event=branch
+            type=sha,format=short,prefix=
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Build and push Docker image
+        uses: docker/build-push-action@v6
+        with:
+          context: .
+          file: Dockerfile
+          push: true
+          tags: ${{ steps.meta.outputs.tags }}
+          labels: ${{ steps.meta.outputs.labels }}
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+
+  delete-old-packages:
+    uses: iak-id/castoria/.github/workflows/delete-old-packages.yaml@main
+    needs: build-and-push-image
+    with:
+      package_name: ${{ github.event.repository.name }}
+      package_type: 'container'
+      min_versions_to_keep: 9
